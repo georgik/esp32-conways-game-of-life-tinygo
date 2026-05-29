@@ -1,52 +1,79 @@
 # Conway's Game of Life - ESP32-S3 (TinyGo)
 
-Conway's Game of Life implemented in Go for the ESP32-S3 microcontroller using TinyGo. The simulation is streamed over UART and displayed in a terminal as ANSI escape sequences. Live cells are rendered with their age (1-9 or `#` for age 10+).
+Conway's Game of Life implemented in Go for ESP32-S3 microcontrollers using TinyGo. Multiple board implementations available with different display options.
+
+## Project Structure
 
 ```
-        1 111     32
-          31  2   113
-         2231   3  1
-          115   1
-##          1
-##            124
-                1
-Iteration: 117
+conway/              # Shared game logic package
+├── grid.go
+boards/
+├── esp32s3-generic/ # UART output (terminal display)
+│   └── main.go
+└── esp32s3-box3/    # ILI9341 LCD display
+    └── main.go
 ```
-
 
 ## Hardware Requirements
 
-- ESP32-S3 development board
+### UART Version (esp32s3-generic)
+- Any ESP32-S3 development board
 - USB-C cable for programming and serial communication
+
+### Display Version (esp32s3-box3)
+- ESP32-S3-BOX-3 or compatible board with ILI9341 display (320x240)
+- USB-C cable
 
 ## Software Requirements
 
-- [TinyGo](https://tinygo.org/)
-- A terminal emulator that supports ANSI escape sequences (e.g., `screen`, `minicom`, `picocom`, or macOS Terminal.app)
+- [TinyGo](https://tinygo.org/) 0.42.0+
+- For UART: terminal emulator with ANSI support (`screen`, `minicom`, `picocom`)
 
 ## Building
 
-**To compile and flash** (build + upload in one step):
+### UART Version (Terminal Output)
 
+**Compile and flash:**
 ```
-tinygo flash -target esp32s3-generic conway.go
-```
-
-**To build only** (without flashing):
-
-```
-tinygo build -target esp32s3-generic -o conway.bin conway.go
+tinygo flash -target esp32s3-generic ./boards/esp32s3-generic/main.go
 ```
 
-For debugging with GDB, build an ELF with symbols:
-
+**Build only:**
 ```
-tinygo build -target esp32s3-generic -o conway.elf conway.go
+tinygo build -target esp32s3-generic -o conway-uart.bin ./boards/esp32s3-generic/main.go
 ```
 
-## Serial Monitor
+### Display Version (ILI9341 LCD)
 
-To view the simulation output, open a serial monitor:
+**Note:** ESP32-S3-BOX-3 requires manual entry into download mode:
+1. Hold BOOT button
+2. Press RESET button
+3. Release both buttons
+4. Run flash command
+
+**Compile and flash:**
+```
+tinygo flash -target esp32s3-generic ./boards/esp32s3-box3/main.go
+```
+
+**Build only:**
+```
+tinygo build -target esp32s3-generic -o conway-display.bin ./boards/esp32s3-box3/main.go
+```
+
+For boards with dedicated `esp32s3-box3` target:
+```
+tinygo flash -target esp32s3-box3 ./boards/esp32s3-box3/main.go
+```
+
+For debugging, build ELF with symbols:
+```
+tinygo build -target esp32s3-generic -o conway.elf ./boards/esp32s3-generic/main.go
+```
+
+## Serial Monitor (UART Version)
+
+To view the UART simulation output:
 
 ```
 tinygo monitor
@@ -70,11 +97,23 @@ The program implements Conway's Game of Life on a 30x30 grid. Each live cell tra
 
 A new simulation starts automatically after 200 iterations. The grid is initialized with a random pattern at approximately 35% cell density.
 
+### Display Rendering
+
+**UART Version:** ANSI escape sequences render colored numbers (1-9) and `#` for age 10+.
+
+**Display Version:** Color gradient on ILI9341 LCD:
+- Dead: Black
+- Young (1-2): Dark green
+- Medium (3-4): Green
+- Mature (5-6): Yellow-green
+- Old (7-8): Yellow
+- Ancient (9+): Red-purple
+
 ## Development
 
-Before committing, ensure the code follows Go formatting standards:
+Format code before committing:
 
 ```
-go fmt conaw.go
+go fmt ./conway/ ./boards/
 ```
 
