@@ -2,6 +2,18 @@
 
 Conway's Game of Life implemented in Go for the ESP32-S3 microcontroller using TinyGo. The simulation is streamed over UART and displayed in a terminal as ANSI escape sequences. Live cells are rendered with their age (1-9 or `#` for age 10+).
 
+```
+        1 111     32
+          31  2   113
+         2231   3  1
+          115   1
+##          1
+##            124
+                1
+Iteration: 117
+```
+
+
 ## Hardware Requirements
 
 - ESP32-S3 development board
