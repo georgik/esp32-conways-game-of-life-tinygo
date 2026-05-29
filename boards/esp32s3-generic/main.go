@@ -1,76 +1,15 @@
 package main
 
 import (
+	"esp32-conways-game-of-life-tinygo/conway"
 	"machine"
 	"math/rand"
 	"time"
 )
 
-const (
-	width  = 30
-	height = 30
-)
-
-type grid [height][width]int
-
-var g grid
-
-func (g *grid) countCell(x, y int) int {
-	var c int
-	for dy := -1; dy <= 1; dy++ {
-		for dx := -1; dx <= 1; dx++ {
-			if dx == 0 && dy == 0 {
-				continue
-			}
-			nx := x + dx
-			ny := y + dy
-			if nx >= 0 && nx < width && ny >= 0 && ny < height {
-				if g[ny][nx] > 0 {
-					c++
-				}
-			}
-		}
-	}
-	return c
-}
-
-func (g *grid) nextStep() grid {
-	var ng grid
-	for y := 0; y < height; y++ {
-		for x := 0; x < width; x++ {
-			c := g.countCell(x, y)
-			if g[y][x] > 0 {
-				if c == 2 || c == 3 {
-					ng[y][x] = g[y][x] + 1
-				} else {
-					ng[y][x] = 0
-				}
-			} else {
-				if c == 3 {
-					ng[y][x] = 1
-				}
-			}
-		}
-	}
-	return ng
-}
-
-func (g *grid) randomize() {
-	rng, _ := machine.GetRNG()
-	rand.Seed(int64(rng))
-	for y := 0; y < height; y++ {
-		for x := 0; x < width; x++ {
-			if rand.Intn(100) < 35 {
-				g[y][x] = 1
-			} else {
-				g[y][x] = 0
-			}
-		}
-	}
-}
-
 var outBuf [1024]byte
 var outIdx int
+var g conway.Grid
 
 func serialPut(b byte) {
 	outBuf[outIdx] = b
@@ -133,19 +72,22 @@ func main() {
 	var iteration int
 	const maxIterations = 200
 
-	g.randomize()
+	rng, _ := machine.GetRNG()
+	rand.Seed(int64(rng))
+	g.RandomizeWith(func() uint32 { return uint32(rand.Uint32()) })
 
 	for {
 		outIdx = 0
 		serialClearScreen()
 		serialMoveCursor(1, 1)
 
-		for y := 0; y < height; y++ {
-			for x := 0; x < width; x++ {
-				if g[y][x] == 0 {
+		for y := 0; y < conway.Height; y++ {
+			for x := 0; x < conway.Width; x++ {
+				cell := g.GetCell(x, y)
+				if cell == 0 {
 					serialPut(' ')
-				} else if g[y][x] <= 9 {
-					serialPut(byte('0' + g[y][x]))
+				} else if cell <= 9 {
+					serialPut(byte('0' + cell))
 				} else {
 					serialPut('#')
 				}
@@ -159,12 +101,14 @@ func main() {
 
 		serialFlush()
 
-		g = g.nextStep()
+		g = g.NextStep()
 		time.Sleep(250 * time.Millisecond)
 
 		iteration++
 		if iteration >= maxIterations {
-			g.randomize()
+			rng, _ := machine.GetRNG()
+			rand.Seed(int64(rng))
+			g.RandomizeWith(func() uint32 { return uint32(rand.Uint32()) })
 			iteration = 0
 		}
 	}
