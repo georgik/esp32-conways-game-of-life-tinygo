@@ -26,13 +26,23 @@ Iteration: 117
 
 ## Building
 
-Compile the firmware and flash it to the device:
+**To compile and flash** (build + upload in one step):
 
 ```
 tinygo flash -target esp32s3-generic conway.go
 ```
 
-This compiles the program and automatically uploads it to the connected ESP32-S3 board.
+**To build only** (without flashing):
+
+```
+tinygo build -target esp32s3-generic -o conway.bin conway.go
+```
+
+For debugging with GDB, build an ELF with symbols:
+
+```
+tinygo build -target esp32s3-generic -o conway.elf conway.go
+```
 
 ## Serial Monitor
 
